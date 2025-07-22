@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTC vs WebSocket Video Call</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+      }
+      .fade-in {
+        animation: fadeIn 0.3s ease-in;
+      }
+      .fade-out {
+        animation: fadeOut 0.3s ease-out;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+      video, img {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        aspect-ratio: 4/3;
+      }
+      .main-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+      }
+      .section-container {
+        width: 100%;
+        max-width: 500px;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+      }
+      @media (max-width: 1024px) {
+        .main-container {
+          grid-template-columns: 1fr;
+        }
+        .section-container {
+          max-width: 100%;
+        }
+        video, img {
+          max-width: 100%;
+        }
+      }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-200 to-indigo-200 min-h-screen flex flex-col items-center p-4">
+  <h1 class="text-4xl font-extrabold text-gray-800 mb-6 drop-shadow-md">RTC vs WebSocket Video Call</h1>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Main Container -->
+  <div class="main-container w-full max-w-7xl">
+    <!-- WebRTC Section -->
+    <div class="border border-gray-300 rounded-xl bg-white shadow-xl">
+      <h2 class="text-2xl font-bold text-gray-700 mb-4 px-6 pt-4">WebRTC Video Call</h2>
+      <div class="bg-gray-50 p-6 rounded-xl shadow-lg mb-4">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold text-lg">Your Peer ID (WebRTC):</label>
+          <div class="flex items-center">
+            <span id="myPeerId-rtc" class="text-gray-600 break-all text-sm">Loading...</span>
+            <button id="copyPeerId-rtc" class="ml-2 text-blue-600 hover:text-blue-800" title="Copy Peer ID">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold text-lg">Enter Remote Peer ID:</label>
+          <input id="remotePeerId-rtc" type="text" placeholder="Paste remote peer ID here" 
+                 class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <div class="mt-3 flex space-x-3">
+            <button id="startCall-rtc" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition duration-200">
+              <i class="fas fa-phone mr-2"></i>Start Call
+            </button>
+            <button id="endCall-rtc" class="flex-1 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition duration-200 hidden">
+              <i class="fas fa-phone-slash mr-2"></i>End Call
+            </button>
+          </div>
+        </div>
+        <div class="mb-4 flex space-x-3">
+          <button id="toggleMic-rtc" class="flex-1 bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition duration-200">
+            <i class="fas fa-microphone mr-2"></i>Mic On
+          </button>
+          <button id="toggleCam-rtc" class="flex-1 bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition duration-200">
+            <i class="fas fa-video mr-2"></i>Cam On
+          </button>
+        </div>
+        <div id="callStatus-rtc" class="text-gray-700 font-semibold text-center p-2 rounded-lg"></div>
+      </div>
+      <div id="callRequest-rtc" class="hidden bg-gray-50 p-6 rounded-xl shadow-lg mb-4 fade-in">
+        <p id="callRequestMessage-rtc" class="text-gray-700 text-lg mb-4"></p>
+        <div class="flex space-x-3">
+          <button id="acceptCall-rtc" class="flex-1 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition duration-200">
+            <i class="fas fa-check mr-2"></i>Accept
+          </button>
+          <button id="rejectCall-rtc" class="flex-1 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition duration-200">
+            <i class="fas fa-times mr-2"></i>Reject
+          </button>
+        </div>
+      </div>
+      <div id="videos-rtc" class="videos-container flex flex-row gap-4 justify-center px-6 pb-6">
+        <div class="relative">
+          <video id="localVideo-rtc" class="w-full max-w-xs rounded-lg shadow-md bg-black" autoplay playsinline muted></video>
+          <span class="absolute bottom-2 left-2 text-white text-sm font-semibold bg-gray-800 bg-opacity-50 px-2 rounded">You</span>
+        </div>
+        <div class="relative">
+          <video id="remoteVideo-rtc" class="w-full max-w-xs rounded-lg shadow-md bg-black" autoplay playsinline></video>
+          <span class="absolute bottom-2 left-2 text-white text-sm font-semibold bg-gray-800 bg-opacity-50 px-2 rounded">Remote</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WebSocket Section -->
+    <div class="border border-gray-300 rounded-xl bg-white shadow-xl">
+      <h2 class="text-2xl font-bold text-gray-700 mb-4 px-6 pt-4">WebSocket Video Call</h2>
+      <div class="bg-gray-50 p-6 rounded-xl shadow-lg mb-4">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold text-lg">Your User ID (WebSocket):</label>
+          <div class="flex items-center">
+            <span id="userId-ws" class="text-gray-600 break-all text-sm">Loading...</span>
+            <button id="copyUserId-ws" class="ml-2 text-blue-600 hover:text-blue-800" title="Copy User ID">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold text-lg">Enter Remote User ID:</label>
+          <input id="targetId-ws" type="text" placeholder="Paste remote user ID here" 
+                 class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <div class="mt-3 flex space-x-3">
+            <button id="startCall-ws" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition duration-200">
+              <i class="fas fa-phone mr-2"></i>Start Call
+            </button>
+            <button id="endCall-ws" class="flex-1 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition duration-200 hidden">
+              <i class="fas fa-phone-slash mr-2"></i>End Call
+            </button>
+          </div>
+        </div>
+        <div class="mb-4 flex space-x-3">
+          <button id="toggleMic-ws" class="flex-1 bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition duration-200">
+            <i class="fas fa-microphone mr-2"></i>Mic On
+          </button>
+          <button id="toggleCam-ws" class="flex-1 bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition duration-200">
+            <i class="fas fa-video mr-2"></i>Cam On
+          </button>
+        </div>
+        <div id="status-ws" class="text-gray-700 font-semibold text-center p-2 rounded-lg"></div>
+      </div>
+      <div id="callRequest-ws" class="hidden bg-gray-50 p-6 rounded-xl shadow-lg mb-4 fade-in">
+        <p id="callRequestMessage-ws" class="text-gray-700 text-lg mb-4"></p>
+        <div class="flex space-x-3">
+          <button id="acceptCall-ws" class="flex-1 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition duration-200">
+            <i class="fas fa-check mr-2"></i>Accept
+          </button>
+          <button id="rejectCall-ws" class="flex-1 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition duration-200">
+            <i class="fas fa-times mr-2"></i>Reject
+          </button>
+        </div>
+      </div>
+      <div id="videos-ws" class="videos-container flex flex-row gap-4 justify-center px-6 pb-6">
+        <div class="relative">
+          <video id="localVideo-ws" class="w-full max-w-xs rounded-lg shadow-md bg-black" autoplay playsinline muted></video>
+          <span class="absolute bottom-2 left-2 text-white text-sm font-semibold bg-gray-800 bg-opacity-50 px-2 rounded">You</span>
+        </div>
+        <div class="relative">
+          <img id="remoteVideo-ws" class="w-full max-w-xs rounded-lg shadow-md bg-black" alt="Remote Video">
+          <span class="absolute bottom-2 left-2 text-white text-sm font-semibold bg-gray-800 bg-opacity-50 px-2 rounded">Remote</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+  <script src="/client-rtc.js"></script>
+  <script src="/client-ws.js"></script>
+</body>
+</html>
