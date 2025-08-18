@@ -9,34 +9,144 @@ This project is a real-time communication application that allows users to make 
 
 This project is ideal for developers looking to explore real-time communication, WebSocket, and WebRTC.
 
-## Features
+### 🎯 What Makes This Project Unique?
 
-- **Dual Call Modes**:
-  - **WebSocket**: Streams video as JPEG frames and audio as raw PCM data via a server.
-  - **WebRTC**: Enables direct peer-to-peer video and audio calls with Socket.IO signaling.
-- **Media Controls**: Toggle camera and microphone with real-time notifications to the other user.
-- **Call Management**: Initiate, accept, reject, or end calls using unique user IDs.
-- **User Interface**: Simple HTML interface with toast notifications and status updates.
-- **Modular Backend**: Organized into separate modules for scalability and easy maintenance.
-- **Error Handling**: Handles network issues, invalid inputs, and large messages.
-- **Browser Support**: Compatible with modern browsers (Chrome, Firefox, etc.).
+This isn't just another video calling application—it's a **technical laboratory** where developers can explore, benchmark, and understand the fundamental differences between modern real-time communication technologies. The platform serves as both an educational resource and a practical testing ground for making informed architectural decisions.
+
+### 🎯 What Makes This Project Unique?
+
+This isn't just another video calling application—it's a **technical laboratory** where developers can explore, benchmark, and understand the fundamental differences between modern real-time communication technologies. The platform serves as both an educational resource and a practical testing ground for making informed architectural decisions.
+
+### 🔬 Dual Implementation Architecture
+
+The project features **parallel implementations** of the same video calling functionality using two distinct approaches:
+
+**🌐 WebRTC Implementation**
+- **Direct Peer-to-Peer** connections with minimal server involvement
+- **Optimal Performance** with native browser APIs for media streaming  
+- **Advanced Signaling** through Socket.IO for connection establishment
+- **ICE Negotiation** for NAT traversal and optimal routing
+- **Low Latency** communication ideal for real-time interactions
+
+**🔌 WebSocket Implementation**  
+- **Server-Mediated** streaming with full control over data flow
+- **Custom Protocol** for video frames (JPEG) and audio (PCM) transmission
+- **Centralized Management** of all client connections and states
+- **Flexible Routing** enabling features like recording, moderation, and broadcasting
+- **Scalable Architecture** suitable for multi-user scenarios
+
+### 🚀 Real-World Learning Laboratory
+
+This platform bridges the gap between theoretical knowledge and practical implementation, offering developers hands-on experience with:
+- **Performance Benchmarking** - Real-time metrics comparison
+- **Architecture Decision Making** - Understanding when to use each approach
+- **Implementation Patterns** - Clean, modular code structure for both technologies
+- **Error Handling Strategies** - Robust network failure management
+- **Scalability Considerations** - Resource usage and connection management
+
+## ✨ Key Features
+
+### 🎥 Video Streaming Capabilities
+- **Real-time Video Calls** - High-quality peer-to-peer and server-mediated video communication
+- **Audio Streaming** - Crystal clear audio transmission with both technologies
+- **Camera Controls** - Toggle camera on/off during calls
+- **Microphone Controls** - Mute/unmute functionality
+- **Call Management** - Initiate, accept, reject, and end calls
+
+### 📊 Performance Analysis
+- **Bandwidth Monitoring** - Real-time bandwidth usage comparison
+- **Latency Measurement** - End-to-end latency analysis
+- **Quality Metrics** - Video quality assessment and comparison
+- **Connection Stability** - Network resilience testing
+
+### 🔧 Technical Implementation
+- **Dual Server Architecture** - Separate servers for Socket.IO and WebSocket
+- **Modular Design** - Clean separation of concerns for easy maintenance
+- **Error Handling** - Comprehensive error management and recovery
+- **Scalable Architecture** - Built for performance and scalability testing
+
+## 🏗️ Architecture
+
+### Server Components
+- **🌐 Express Server** - Main web server hosting the application
+- **📡 Socket.IO Server** - WebRTC signaling and real-time communication
+- **🔌 WebSocket Server** - Raw WebSocket video streaming implementation
+- **⚡ Dual-Port Setup** - Separate ports for different technologies
+
+### Communication Flow
+
+#### WebRTC Flow (via Socket.IO)
+1. **Peer Discovery** - Clients connect and receive unique peer IDs
+2. **Signaling** - SDP offer/answer exchange through Socket.IO
+3. **ICE Negotiation** - Candidate exchange for NAT traversal
+4. **Direct P2P Connection** - Media streams directly between peers
+5. **Call Management** - Real-time call state management
+
+#### WebSocket Flow
+1. **Client Connection** - Direct WebSocket connection with UUID assignment
+2. **Call Initiation** - Server-mediated call request/response
+3. **Media Streaming** - Video/audio data streamed through server
+4. **State Synchronization** - Server maintains call state and client connections
 
 ## Tech Stack
+## 🛠️ Technology Stack
 
-- **Backend**:
-  - Node.js
-  - Express.js (serves static files)
-  - Socket.IO (WebRTC signaling)
-  - ws (WebSocket for video/audio streaming)
-  - uuid (unique user IDs)
-- **Frontend**:
+### Core Technologies
+- **Node.js** - JavaScript runtime environment
+- **Express.js** - Web application framework for HTTP server
+- **Socket.IO** - Real-time bidirectional event-based communication
+- **WebSocket (ws)** - Raw WebSocket implementation for direct communication
+
+### WebRTC Libraries
+- **Simple-Peer** - WebRTC wrapper for simplified peer-to-peer connections
+- **MediaSoup** - Cutting-edge WebRTC media server for advanced use cases
+- **MediaSoup-Client** - Client-side library for MediaSoup integration
+
+### Utilities
+- **UUID** - Unique identifier generation for client tracking
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- **Node.js** >= 14.x
+- **npm** or **yarn** package manager
+- **Modern Browser** with WebRTC support
+
+###Frontend**:
   - HTML5, CSS3, JavaScript
   - WebRTC (peer-to-peer streaming)
   - WebSocket (server-relayed streaming)
   - Font Awesome (icons)
-- **Development**:
+###Development**:
   - Nodemon (auto-reload in development)
   - Git (version control)
+## 🚀 API Documentation
+
+### Socket.IO Events (Port 3000)
+
+#### Client → Server Events
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `call-request` | `{ target: string }` | Initiate call to target peer |
+| `call-response` | `{ target: string, accepted: boolean }` | Respond to incoming call |
+| `offer` | `{ target: string, signal: RTCSessionDescription }` | Send WebRTC offer |
+| `answer` | `{ target: string, signal: RTCSessionDescription }` | Send WebRTC answer |
+| `ice-candidate` | `{ target: string, candidate: RTCIceCandidate }` | Exchange ICE candidates |
+| `end-call` | `{ target: string }` | End active call |
+
+#### Server → Client Events
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `peer-id` | `string` | Unique peer identifier |
+| `call-request` | `{ sender: string }` | Incoming call notification |
+| `call-response` | `{ sender: string, accepted: boolean }` | Call response from peer |
+| `offer` | `{ signal: RTCSessionDescription, sender: string }` | WebRTC offer from peer |
+| `answer` | `{ signal: RTCSessionDescription, sender: string }` | WebRTC answer from peer |
+| `ice-candidate` | `{ candidate: RTCIceCandidate, sender: string }` | ICE candidate from peer |
+| `call-ended` | `{ sender: string }` | Call ended notification |
+| `user-disconnected` | `string` | Peer disconnection notification |
+
+### WebSocket Messages (Port 3001)
 
 ## Project Structure
 
